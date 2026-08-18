@@ -18,35 +18,82 @@
 
 ## Quick start
 
-A few options to get `llama.cpp` installed on your machine:
+This fork adds inference support for the internally developed
+`Spark3ForCausalLM` model. The following commands build `llama.cpp`, convert a
+local Hugging Face checkpoint to GGUF, and run it on CPU or an NVIDIA GPU.
 
-- Visit https://llama.app and follow the instructions
-- Run with Docker - see our [Docker documentation](docs/docker.md)
-- Download pre-built binaries from the [releases page](https://github.com/ggml-org/llama.cpp/releases)
-- Build from source by cloning this repository - check out [our build guide](docs/build.md)
+### 1. Build
 
-Once installed:
+For an NVIDIA CUDA build:
 
 ```sh
-# Download and run a model directly from Hugging Face
-llama cli -hf ggml-org/Qwen3.5-0.8B-GGUF
-
-# Launch OpenAI-compatible API server
-llama serve -hf ggml-org/Qwen3.5-0.8B-GGUF
+cmake -B build -DGGML_CUDA=ON
+cmake --build build --config Release -j 8
 ```
 
-<table align="center">
-    <tr>
-        <td align="center" width=50%>
-            <img width="1310" height="888" alt="VLM session with `llama cli`" src="https://github.com/user-attachments/assets/88726b48-1713-48aa-a525-95a02e78afc4" />
-            <i>VLM session with <b>llama cli</b></i>
-        </td>
-        <td align="center">
-            <img width="1392" height="958" alt="Built-in web UI against `llama serve` running Qwen 3.6" src="https://github.com/user-attachments/assets/b402f972-2e32-4def-8771-8d849f08cf2e" />
-            <i>Built-in web UI against <b>llama serve</b></i>
-        </td>
-    </tr>
-<table>
+For a CPU-only build, use `-DGGML_CUDA=OFF` instead. The CUDA build also
+contains the CPU backend, so the same binaries can be used for both examples
+below.
+
+### 2. Convert the Spark3 checkpoint to GGUF
+
+Install the Python conversion dependencies:
+
+```sh
+python -m pip install -r requirements.txt
+```
+
+The Hugging Face checkpoint directory must contain `config.json`, the model
+`.safetensors` files, and the tokenizer files (`tokenizer.json`,
+`tokenizer_config.json`, and `merges.txt`). Convert it to BF16 GGUF:
+
+```sh
+mkdir -p models
+python convert_hf_to_gguf.py /path/to/spark3-hf \
+    --outfile models/spark3-1.7b-bf16.gguf \
+    --outtype bf16
+```
+
+### 3. Run inference
+
+CPU:
+
+```sh
+./build/bin/llama-completion \
+    -m models/spark3-1.7b-bf16.gguf \
+    -ngl 0 -t 16 -c 1024 \
+    -cnv -st --jinja --simple-io --no-display-prompt \
+    -p '请用三句话解释什么是计算图。' \
+    -n 96 --temp 0 --seed 1
+```
+
+NVIDIA GPU (GPU 0):
+
+```sh
+CUDA_VISIBLE_DEVICES=0 ./build/bin/llama-completion \
+    -m models/spark3-1.7b-bf16.gguf \
+    -ngl 99 -t 16 -c 1024 \
+    -cnv -st --jinja --simple-io --no-display-prompt \
+    -p '请用三句话解释什么是计算图。' \
+    -n 96 --temp 0 --seed 1
+```
+
+`-ngl 99` offloads all Spark3 layers to the selected GPU. Use an integer for
+`-ngl`; values such as `all` are not accepted by `llama-bench`.
+
+### 4. Verify the architecture and GPU backend
+
+```sh
+./build/bin/test-llama-archs -a spark3
+
+CUDA_VISIBLE_DEVICES=0 ./build/bin/llama-bench \
+    -m models/spark3-1.7b-bf16.gguf \
+    -ngl 99 -p 32 -n 8
+```
+
+The architecture test should report `OK` for the CPU and CUDA backends. A
+`Roundtrip: SKIP` result is expected because model-saver roundtrip support is
+currently disabled for Spark3.
 
 ## Description
 
