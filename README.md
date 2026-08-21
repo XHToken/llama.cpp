@@ -43,12 +43,15 @@ Install the Python conversion dependencies:
 python -m pip install -r requirements.txt
 ```
 
-The Hugging Face checkpoint directory must contain `config.json`, the model
-`.safetensors` files, and the tokenizer files (`tokenizer.json`,
-`tokenizer_config.json`, and `merges.txt`). Convert it to BF16 GGUF:
+The Spark3 checkpoint stores its tokenizer under `v8_2_token`. The converter
+expects the tokenizer files next to `config.json` and the model `.safetensors`
+files, so copy them to the checkpoint root before conversion:
 
 ```sh
 mkdir -p models
+cp /path/to/spark3-hf/v8_2_token/{tokenizer.json,tokenizer_config.json,merges.txt} \
+    /path/to/spark3-hf/
+
 python convert_hf_to_gguf.py /path/to/spark3-hf \
     --outfile models/spark3-1.7b-bf16.gguf \
     --outtype bf16
