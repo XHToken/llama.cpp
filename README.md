@@ -20,7 +20,7 @@
 ## Quick start
 
 This fork adds inference support for the internally developed
-`Spark3ForCausalLM` model. The following commands build `llama.cpp`, convert a
+`Spark2_5ForCausalLM` model. The following commands build `llama.cpp`, convert a
 local Hugging Face checkpoint to GGUF, and run it on CPU or an NVIDIA GPU.
 
 ### 1. Build
@@ -36,7 +36,7 @@ For a CPU-only build, use `-DGGML_CUDA=OFF` instead. The CUDA build also
 contains the CPU backend, so the same binaries can be used for both examples
 below.
 
-### 2. Convert the Spark3 checkpoint to GGUF
+### 2. Convert the Spark2_5 checkpoint to GGUF
 
 Install the Python conversion dependencies:
 
@@ -44,17 +44,17 @@ Install the Python conversion dependencies:
 python -m pip install -r requirements.txt
 ```
 
-The Spark3 checkpoint stores its tokenizer under `v8_2_token`. The converter
+The Spark2_5 checkpoint stores its tokenizer under `v8_2_token`. The converter
 expects the tokenizer files next to `config.json` and the model `.safetensors`
 files, so copy them to the checkpoint root before conversion:
 
 ```sh
 mkdir -p models
-cp /path/to/spark3-hf/v8_2_token/{tokenizer.json,tokenizer_config.json,merges.txt} \
-    /path/to/spark3-hf/
+cp /path/to/spark2_5-hf/v8_2_token/{tokenizer.json,tokenizer_config.json,merges.txt} \
+    /path/to/spark2_5-hf/
 
-python convert_hf_to_gguf.py /path/to/spark3-hf \
-    --outfile models/spark3-1.7b-bf16.gguf \
+python convert_hf_to_gguf.py /path/to/spark2_5-hf \
+    --outfile models/spark2_5-1.7b-bf16.gguf \
     --outtype bf16
 ```
 
@@ -64,7 +64,7 @@ CPU:
 
 ```sh
 ./build/bin/llama-completion \
-    -m models/spark3-1.7b-bf16.gguf \
+    -m models/spark2_5-1.7b-bf16.gguf \
     -ngl 0 -t 16 -c 1024 \
     -cnv -st --jinja --simple-io --no-display-prompt \
     -p '请用三句话解释什么是计算图。' \
@@ -75,29 +75,29 @@ NVIDIA GPU (GPU 0):
 
 ```sh
 CUDA_VISIBLE_DEVICES=0 ./build/bin/llama-completion \
-    -m models/spark3-1.7b-bf16.gguf \
+    -m models/spark2_5-1.7b-bf16.gguf \
     -ngl 99 -t 16 -c 1024 \
     -cnv -st --jinja --simple-io --no-display-prompt \
     -p '请用三句话解释什么是计算图。' \
     -n 96 --temp 0 --seed 1
 ```
 
-`-ngl 99` offloads all Spark3 layers to the selected GPU. Use an integer for
+`-ngl 99` offloads all Spark2_5 layers to the selected GPU. Use an integer for
 `-ngl`; values such as `all` are not accepted by `llama-bench`.
 
 ### 4. Verify the architecture and GPU backend
 
 ```sh
-./build/bin/test-llama-archs -a spark3
+./build/bin/test-llama-archs -a spark2_5
 
 CUDA_VISIBLE_DEVICES=0 ./build/bin/llama-bench \
-    -m models/spark3-1.7b-bf16.gguf \
+    -m models/spark2_5-1.7b-bf16.gguf \
     -ngl 99 -p 32 -n 8
 ```
 
 The architecture test should report `OK` for the CPU and CUDA backends. A
 `Roundtrip: SKIP` result is expected because model-saver roundtrip support is
-currently disabled for Spark3.
+currently disabled for Spark2_5.
 
 ## Description
 
