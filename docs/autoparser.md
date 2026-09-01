@@ -495,6 +495,7 @@ The following templates have active tests in `tests/test-chat.cpp`:
 | DeepSeek V3.1 | JSON_NATIVE | Forced thinking mode |
 | GLM-4.6 | TAG_WITH_TAGGED | `<tool_call>name\n<arg_key>...<arg_value>...` format |
 | GLM-4.7-Flash | TAG_WITH_TAGGED | Updated GLM format |
+| Spark2_5 | TAG_WITH_TAGGED | `<tool_call>name<arg_key>...<arg_value>...` format |
 | Kimi-K2-Thinking | JSON_NATIVE | Reasoning + JSON tools |
 | Apertus-8B-Instruct | JSON_NATIVE | Function name as JSON key |
 | MiniMax-M2 | TAG_WITH_JSON | XML invoke with JSON args |
