@@ -4405,9 +4405,9 @@ static void test_template_output_peg_parsers(bool detailed_debug) {
             .run();
     }
 
-    // Spark2_5 uses tagged arguments with forced-open thinking.
+    // Spark2.5 uses tagged arguments with forced-open thinking.
     {
-        auto tst = peg_tester("models/templates/XHToken-Spark-X2.5-1.7B.jinja", detailed_debug);
+        auto tst = peg_tester("models/templates/Spark2.5.jinja", detailed_debug);
 
         tst.test("Hello, world!\nWhat's up?")
             .enable_thinking(false)
